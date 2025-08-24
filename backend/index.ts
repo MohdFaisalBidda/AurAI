@@ -4,6 +4,7 @@ import { createCompletion } from "./opnerouter";
 import { InMemoryStore } from "./InMemoryStore";
 
 const app = express();
+app.use(express.json()); 
 
 app.post("/chat", async (req, res) => {
     const { success, data } = CreateChatType.safeParse(req.body)
