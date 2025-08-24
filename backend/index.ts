@@ -1,10 +1,12 @@
 import express from "express";
+import cors from "cors"
 import { CreateChatType, Role } from "./types/type";
 import { createCompletion } from "./opnerouter";
 import { InMemoryStore } from "./InMemoryStore";
 
 const app = express();
 app.use(express.json()); 
+app.use(cors())
 
 app.post("/chat", async (req, res) => {
     const { success, data } = CreateChatType.safeParse(req.body)
@@ -46,4 +48,6 @@ app.post("/chat", async (req, res) => {
     //Store it in DB
 })
 
-app.listen(3000)
+app.listen(3001,()=>{
+    console.log("Server started on port 3001")
+})
