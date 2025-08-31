@@ -10,11 +10,16 @@ import {
 import { ArrowUp, ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
 
-const AI_MODELS = [{ id: "openai/gpt-oss-20b:free", name: "GPT-OSS-20B" }];
+const AI_MODELS = [
+  { id: "openai/gpt-oss-20b:free", name: "GPT-OSS-20B" },
+  { id: "deepseek/deepseek-r1", name: "Deepseek-R1" },
+];
 
 export default function Home() {
   const [selectedModel, setSelectedModel] = useState(AI_MODELS[0].id);
   const { messages, sendMessage } = useChat();
+  console.log(messages);
+  
   const [input, setInput] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

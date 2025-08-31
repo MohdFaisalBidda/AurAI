@@ -1,52 +1,14 @@
 import express from "express";
 import cors from "cors"
-import { CreateChatType, Role } from "./types/type";
-import { createCompletion } from "./opnerouter";
-import { InMemoryStore } from "./InMemoryStore";
+import aiRouter from "./routes/aiRouter"
+import authRouter from "./routes/authRouter"
 
 const app = express();
 app.use(express.json()); 
 app.use(cors())
 
-app.post("/chat", async (req, res) => {
-    const { success, data } = CreateChatType.safeParse(req.body)
-
-    const conversationId = data?.conversationId ?? Bun.randomUUIDv7()
-
-    if (!success) {
-        res.status(411).json({
-            message: "Incorrect Inputs"
-        })
-        return
-    }
-
-    let existingMessages = InMemoryStore.getInstance().get(conversationId)
-
-    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-    res.setHeader("Connection", "keep-alive");
-    let message = "";
-
-    await createCompletion([...existingMessages, {
-        role: Role.User,
-        content: data.message
-    }], data.model, (chunk: string) => {
-        message += chunk
-        res.write(chunk)
-    })
-    res.end()
-
-    InMemoryStore.getInstance().add(conversationId, {
-        role: Role.User,
-        content: data.message
-    })
-
-    InMemoryStore.getInstance().add(conversationId, {
-        role: Role.Agent,
-        content: message
-    })
-
-    //Store it in DB
-})
+app.use("/ai",aiRouter);
+app.use("/auth",authRouter);
 
 app.listen(3001,()=>{
     console.log("Server started on port 3001")

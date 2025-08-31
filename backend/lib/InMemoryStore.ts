@@ -1,4 +1,4 @@
-import type { Message } from "./types/type"
+import type { Message } from "../types/type"
 
 const EVICTION_TIME = 5 * 60 * 1000;
 const EVICTION_CLOCK_TIME = 1 * 60 * 1000;
@@ -46,5 +46,6 @@ export class InMemoryStore {
         }
 
         this.store[conversationId]?.messages?.push(message) 
+        this.store[conversationId].evictionTime = Date.now() + EVICTION_TIME
     }
 }

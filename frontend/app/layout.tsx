@@ -3,7 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import Sidebar from "@/components/sidebar";
+import SidebarCollapsedOptions from "@/components/SidebarCollapsedOptions";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Sideabar } from "@/components/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,21 +30,30 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} antialiased min-h-screen`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ResizablePanelGroup direction="horizontal" className="min-h-screen">
-            <ResizablePanel defaultSize={15}>
-              <Sidebar />
-            </ResizablePanel>
-            <ResizablePanel defaultSize={85}>
-              <main className="h-full p-2">{children}</main>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ThemeProvider>
+        <SidebarProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Sideabar />
+            <SidebarInset className="!h-svh p-2">
+              <div className="bg-muted/60 relative h-full max-h-svh w-full rounded-xl p-4">
+                <div className="absolute top-0 left-0 z-[50] flex h-12 w-full items-center justify-between px-3">
+                  <SidebarCollapsedOptions />
+                  <div className="flex items-center gap-2">
+                    {/* <UpgradeCTA variant="topbar" />
+                      <SelectTheme /> */}
+                  </div>
+                </div>
+                <div className="mx-auto flex max-h-fit w-full max-w-3xl flex-col overflow-y-hidden">
+                  <div className="flex-1">{children}</div>
+                </div>
+              </div>
+            </SidebarInset>
+          </ThemeProvider>
+        </SidebarProvider>
       </body>
     </html>
   );
