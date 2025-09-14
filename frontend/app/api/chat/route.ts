@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const { messages }: { messages: UIMessage[] } = await req.json();
 
     const result = streamText({
-        model: openrouter.chat('google/gemini-2.5-flash-image-preview:free'),
+        model: openrouter.chat('openai/gpt-oss-20b:free'),
         messages: convertToModelMessages(messages),
     });
 

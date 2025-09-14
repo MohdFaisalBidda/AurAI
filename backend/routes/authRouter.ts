@@ -22,29 +22,36 @@ router.post("/initialize_sigin", async (req, res) => {
 
         //Generate and Send OTP
         const { otp, expires } = TOTP.generate(base32.encode(data.email + process.env.JWT_SECRET!))
-        if (process.env.NODE_ENV! !== "development") {
-            await sendEmail(data.email, "Welcome to AurAI", otp)
-        } else {
-            console.log("Log in to AurAI", otp);
-        }
+        // if (process.env.NODE_ENV! !== "development") {
+        // } else {
+        //     console.log("Log in to AurAI", otp);
+        // }
+        await sendEmail(data.email, "Welcome to AurAI", otp)
 
-        try {
-            await prisma.user.create({
-                data: {
-                    email: data.email,
-                }
-            })
-            res.status(200).json({
-                message: "Email sent successfully",
-                success: true,
-            })
-        } catch (error) {
-            console.log("User already exists", error);
-            res.status(500).json({
+        const user = await prisma.user.findUnique({
+            where: {
+                email: data.email
+            }
+        })
+
+        if (user) {
+            res.status(400).json({
                 message: "User already exists",
                 success: false,
             })
+            return
         }
+
+        await prisma.user.create({
+            data: {
+                email: data.email,
+            }
+        })
+        res.status(200).json({
+            message: "Email sent successfully",
+            success: true,
+        })
+
     } catch (error) {
         console.log(error);
         res.status(500).json({

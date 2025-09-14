@@ -29,7 +29,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} antialiased min-h-screen`}>
+      <body
+        className={`${geistSans.variable} antialiased min-h-screen bg-[#0B261B] text-foreground`}
+      >
         <SidebarProvider>
           <ThemeProvider
             attribute="class"
@@ -39,7 +41,7 @@ export default function RootLayout({
           >
             <Sideabar />
             <SidebarInset className="!h-svh p-2">
-              <div className="bg-muted/60 relative h-full max-h-svh w-full rounded-xl p-4">
+              <div className="bg-[#060D0C] relative h-full max-h-svh w-full rounded-xl p-4 pt-0">
                 <div className="absolute top-0 left-0 z-[50] flex h-12 w-full items-center justify-between px-3">
                   <SidebarCollapsedOptions />
                   <div className="flex items-center gap-2">
@@ -47,7 +49,7 @@ export default function RootLayout({
                       <SelectTheme /> */}
                   </div>
                 </div>
-                <div className="mx-auto flex max-h-fit w-full max-w-3xl flex-col overflow-y-hidden">
+                <div className="mx-auto flex max-h-fit w-full max-w-4xl flex-col overflow-y-hidden">
                   <div className="flex-1">{children}</div>
                 </div>
               </div>

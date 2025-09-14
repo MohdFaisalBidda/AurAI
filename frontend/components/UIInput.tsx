@@ -1,5 +1,5 @@
 "use client";
-import { v4 } from "uuid";
+// import { v4 } from "uuid";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -12,23 +12,29 @@ import {
   CheckCircleIcon,
   ArrowsLeftRightIcon,
 } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
+import { ArrowUpIcon, WrapText } from "lucide-react";
+import { Geist_Mono } from "next/font/google";
+import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import remarkGfm from "remark-gfm";
-import { Geist_Mono } from "next/font/google";
-import { cn } from "@/lib/utils";
-import TabsSuggestion from "./tabs-suggestion";
-import { ModelSelector } from "@/components/ui/model-selector";
-import { DEFAULT_MODEL_ID } from "@/models/constants";
 import { useTheme } from "next-themes";
-import { ArrowUpIcon, WrapText } from "lucide-react";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { useUser } from "@/hooks/useUser";
-import { useRouter } from "next/navigation";
-import { useConversationById } from "@/hooks/useConversation";
-import { useCredits } from "@/hooks/useCredits";
-import { UpgradeCTA } from "@/components/ui/upgrade-cta";
-import { useExecutionContext } from "@/contexts/execution-context";
+// import { Geist_Mono } from "next/font/google";
+// import { cn } from "@/lib/utils";
+// import TabsSuggestion from "./tabs-suggestion";
+// import { ModelSelector } from "@/components/ui/model-selector";
+// import { DEFAULT_MODEL_ID } from "@/models/constants";
+// import { useTheme } from "next-themes";
+// import { ArrowUpIcon, WrapText } from "lucide-react";
+// import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+// import { useUser } from "@/hooks/useUser";
+// import { useRouter } from "next/navigation";
+// import { useConversationById } from "@/hooks/useConversation";
+// import { useCredits } from "@/hooks/useCredits";
+// import { UpgradeCTA } from "@/components/ui/upgrade-cta";
+// import { useExecutionContext } from "@/contexts/execution-context";
 
 const geistMono = Geist_Mono({
   subsets: ["latin"],
@@ -44,16 +50,18 @@ interface Message {
 }
 
 const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
 interface UIInputProps {
   conversationId?: string;
 }
 
+type Model = "openai/gpt-oss-20b:free" | "deepseek/deepseek-r1";
+
 const UIInput = ({
   conversationId: initialConversationId,
 }: UIInputProps = {}) => {
-  const [model, setModel] = useState<string>(DEFAULT_MODEL_ID);
+  const [model, setModel] = useState<Model>("openai/gpt-oss-20b:free");
   const [query, setQuery] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -62,47 +70,35 @@ const UIInput = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isWrapped, setIsWrapped] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(
-    initialConversationId || v4()
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    undefined
   );
   const { resolvedTheme } = useTheme();
-  const { user, isLoading: isUserLoading } = useUser();
-  const { conversation, loading: converstionLoading } = useConversationById(
-    initialConversationId
-  );
-  const {
-    userCredits,
-    isLoading: isCreditsLoading,
-    refetchCredits,
-  } = useCredits();
-  const { refreshExecutions } = useExecutionContext();
+  // const { user, isLoading: isUserLoading } = useUser();
+  // const { conversation, loading: converstionLoading } = useConversationById(
+  //   initialConversationId
+  // );
+  // const {
+  //   userCredits,
+  //   isLoading: isCreditsLoading,
+  //   refetchCredits,
+  // } = useCredits();
+  // const { refreshExecutions } = useExecutionContext();
   const router = useRouter();
 
   const toggleWrap = useCallback(() => {
     setIsWrapped((prev) => !prev);
   }, []);
 
-  useEffect(() => {
-    if (conversation?.messages && initialConversationId) {
-      setMessages(conversation.messages);
-      setShowWelcome(false);
-    }
-  }, [conversation, initialConversationId]);
+  // useEffect(() => {
+  //   if (conversation?.messages && initialConversationId) {
+  //     setMessages(conversation.messages);
+  //     setShowWelcome(false);
+  //   }
+  // }, [conversation, initialConversationId]);
 
   const processStream = async (response: Response, userMessage: string) => {
     if (!response.ok) {
-      // Handle credit-related errors
-      if (response.status === 403) {
-        try {
-          const errorData = await response.json();
-          if (errorData.message?.includes("Insufficient credits")) {
-            // Refetch credits to update UI
-            await refetchCredits();
-          }
-        } catch (e) {
-          console.error("Error parsing error response:", e);
-        }
-      }
       console.error("Error from API:", response.statusText);
       setIsLoading(false);
       return;
@@ -118,33 +114,20 @@ const UIInput = ({
         return;
       }
 
+      // Add the assistant message with empty content
       setMessages((prev) => [
         ...prev,
         { id: tempMessageId, role: "assistant", content: "" },
       ]);
 
       let accumulatedContent = "";
-      let buffer = "";
-      let updateTimeout: NodeJS.Timeout | null = null;
-
-      const updateMessage = (content: string) => {
-        if (updateTimeout) {
-          clearTimeout(updateTimeout);
-        }
-
-        updateTimeout = setTimeout(() => {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === tempMessageId ? { ...msg, content } : msg
-            )
-          );
-        }, 50);
-      };
+      let decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
 
         if (done) {
+          // Final update when stream is complete
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === tempMessageId
@@ -152,51 +135,86 @@ const UIInput = ({
                 : msg
             )
           );
-
-          if (updateTimeout) {
-            clearTimeout(updateTimeout);
-          }
-
           break;
         }
 
-        const chunk = new TextDecoder().decode(value);
-        console.log(chunk);
+        // Decode the chunk
+        const chunk = decoder.decode(value, { stream: true });
 
-        buffer += chunk;
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        let hasNewContent = false;
+        // Split by lines to handle SSE format
+        const lines = chunk.split("\n");
 
         for (const line of lines) {
           if (line.trim() === "") continue;
 
+          // Handle SSE format (data: {...})
           if (line.startsWith("data: ")) {
-            const data = line.substring(6);
+            const data = line.substring(6); // Remove "data: " prefix
 
             if (data === "[DONE]") {
-              continue;
+              continue; // End of stream
             }
 
             try {
-              const parsedData = JSON.parse(data) as {
-                content?: string;
-              };
-              const content = parsedData.content;
+              const parsedData = JSON.parse(data);
+              console.log("Parsed data:", parsedData);
+
+              // Extract content based on different possible response formats
+              const content =
+                parsedData.content ||
+                parsedData.message ||
+                parsedData.choices?.[0]?.delta?.content ||
+                parsedData.choices?.[0]?.message?.content;
+
               if (content) {
                 accumulatedContent += content;
-                hasNewContent = true;
+                // Update the UI immediately
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === tempMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                );
               }
             } catch (e) {
-              console.error("Error parsing JSON:", e);
+              console.error("Error parsing JSON:", e, "Data:", data);
+            }
+          } else {
+            // If it's not SSE format, try to parse as direct JSON
+            try {
+              const parsedData = JSON.parse(line);
+              console.log("Direct JSON parsed:", parsedData);
+
+              const content =
+                parsedData.content ||
+                parsedData.message ||
+                parsedData.choices?.[0]?.delta?.content ||
+                parsedData.choices?.[0]?.message?.content;
+
+              if (content) {
+                accumulatedContent += content;
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === tempMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                );
+              }
+            } catch (e) {
+              // If it's not JSON at all, treat as plain text
+              console.log("Plain text content:", line);
+              accumulatedContent += line + "\n";
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempMessageId
+                    ? { ...msg, content: accumulatedContent }
+                    : msg
+                )
+              );
             }
           }
-        }
-
-        if (hasNewContent) {
-          updateMessage(accumulatedContent);
         }
       }
     } catch (error) {
@@ -211,23 +229,22 @@ const UIInput = ({
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
-      await refreshExecutions();
     }
   };
 
   const handleCreateChat = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
-      router.push("/auth");
-      return;
-    }
+    // if (!user) {
+    //   router.push("/auth");
+    //   return;
+    // }
 
     // Check if user has credits
-    if (userCredits && userCredits.credits <= 0 && !userCredits.isPremium) {
-      // Don't allow chat if no credits
-      return;
-    }
+    // if (userCredits && userCredits.credits <= 0 && !userCredits.isPremium) {
+    //   // Don't allow chat if no credits
+    //   return;
+    // }
 
     if (!query.trim() || isLoading) return;
 
@@ -252,34 +269,36 @@ const UIInput = ({
     abortControllerRef.current = new AbortController();
 
     try {
-      setTimeout(() => {
-        void (async () => {
-          try {
-            const response = await fetch(`${BACKEND_URL}/ai/chat`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-              body: JSON.stringify({
-                message: currentQuery,
-                model: model,
-                conversationId: conversationId,
-              }),
-              signal: abortControllerRef.current?.signal,
-            });
+      const response = await fetch(`${BACKEND_URL}/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          message: currentQuery,
+          model: model,
+          conversationId: conversationId,
+        }),
+        signal: abortControllerRef.current?.signal,
+      });
 
-            await processStream(response, currentQuery);
-          } catch (error) {
-            if ((error as Error).name !== "AbortError") {
-              console.error("Error sending message:", error);
-            }
-            setIsLoading(false);
-          }
-        })();
-      }, 0);
+      console.log(response, "response");
+
+      await processStream(response, currentQuery);
     } catch (error) {
-      console.error("Error preparing request:", error);
+      if ((error as Error).name !== "AbortError") {
+        console.error("Error sending message:", error);
+        // Add an error message to the UI
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: "assistant",
+            content: "Sorry, there was an error processing your request.",
+          },
+        ]);
+      }
       setIsLoading(false);
     }
   };
@@ -294,7 +313,8 @@ const UIInput = ({
     }
   };
 
-  if (initialConversationId && converstionLoading) {
+  // if (initialConversationId && converstionLoading) {
+  if (initialConversationId) {
     return (
       <div className="flex w-full overflow-hidden h-[96dvh]">
         <div className="relative flex h-full w-full flex-col">
@@ -321,25 +341,27 @@ const UIInput = ({
         {!query && showWelcome && messages.length === 0 ? (
           <div className="flex h-full w-full flex-col">
             <div className="flex h-full w-full flex-col items-center justify-center">
-              <TabsSuggestion
+              {/* <TabsSuggestion
                 suggestedInput={query}
                 setSuggestedInput={setQuery}
-              />
+              /> */}
             </div>
           </div>
         ) : (
-          <div className="no-scrollbar mt-6 flex h-full w-full flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-10 md:px-8">
+          <div className="no-scrollbar flex h-full w-full flex-1 flex-col gap-4 overflow-y-auto px-4 pt-8 pb-14 md:px-8">
             <div className="mx-auto h-full w-full max-w-4xl">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`group mb-8 flex w-full flex-col ${message.role === "assistant" ? "items-start" : "items-end"} gap-2`}
+                  className={`group mb-8 pb-10 flex w-full flex-col ${
+                    message.role === "assistant" ? "items-start" : "items-end"
+                  } gap-2`}
                 >
                   <div
                     className={cn(
                       "prose cursor-pointer dark:prose-invert max-w-none rounded-lg px-4 py-2",
                       message.role === "user"
-                        ? "bg-accent/10 w-fit max-w-full font-medium"
+                        ? "bg-[#2c2c2e] w-fit max-w-full font-medium"
                         : "w-full p-0"
                     )}
                   >
@@ -353,13 +375,13 @@ const UIInput = ({
                           const codeContent = Array.isArray(children)
                             ? children.join("")
                             : typeof children === "string"
-                              ? children
-                              : "";
+                            ? children
+                            : "";
 
                           return isInline ? (
                             <code
                               className={cn(
-                                "bg-accent rounded-sm px-1 py-0.5 text-sm",
+                                "bg-accent rounded-sm text-wrap px-1 py-0.5 text-sm",
                                 geistMono.className
                               )}
                               {...rest}
@@ -419,7 +441,7 @@ const UIInput = ({
                                   padding: "1rem",
                                   backgroundColor:
                                     resolvedTheme === "dark"
-                                      ? "#1a1620"
+                                      ? "#2c2c2e"
                                       : "#f5ecf9",
                                   color:
                                     resolvedTheme === "dark"
@@ -532,13 +554,13 @@ const UIInput = ({
         )}
 
         {/* Show upgrade prompt when user has no credits */}
-        {userCredits && userCredits.credits <= 0 && !userCredits.isPremium && (
+        {/* {userCredits && userCredits.credits <= 0 && !userCredits.isPremium && (
           <div className="mb-4 w-full px-4 md:px-8">
             <div className="mx-auto w-full max-w-4xl">
               <UpgradeCTA variant="banner" />
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="bg-muted/20 backdrop-blur-3xl border border-border/50 mb-4 w-full rounded-2xl p-1">
           <div className="mx-auto w-full max-w-4xl">
@@ -557,25 +579,26 @@ const UIInput = ({
                   }
                 }}
                 placeholder={
-                  userCredits &&
-                  userCredits.credits <= 0 &&
-                  !userCredits.isPremium
-                    ? "You need credits to start a chat. Please upgrade to continue."
-                    : "Ask anything"
+                  // userCredits &&
+                  // userCredits.credits <= 0 &&
+                  // !userCredits.isPremium
+                  //   ? "You need credits to start a chat. Please upgrade to continue."
+                  //   :
+                  "Ask anything"
                 }
                 className="h-[2rem] resize-none rounded-none border-none bg-transparent px-0 py-1 shadow-none ring-0 focus-visible:ring-0 dark:bg-transparent"
-                disabled={
-                  isLoading ||
-                  !!(
-                    userCredits &&
-                    userCredits.credits <= 0 &&
-                    !userCredits.isPremium
-                  )
-                }
+                // disabled={
+                //   isLoading ||
+                //   !!(
+                //     userCredits &&
+                //     userCredits.credits <= 0 &&
+                //     !userCredits.isPremium
+                //   )
+                // }
               />
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <ModelSelector
+                  {/* <ModelSelector
                     value={model}
                     onValueChange={setModel}
                     disabled={
@@ -586,20 +609,20 @@ const UIInput = ({
                         !userCredits.isPremium
                       )
                     }
-                  />
+                  /> */}
                 </div>
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={
-                    isLoading ||
-                    !query.trim() ||
-                    !!(
-                      userCredits &&
-                      userCredits.credits <= 0 &&
-                      !userCredits.isPremium
-                    )
-                  }
+                  // disabled={
+                  //   isLoading ||
+                  //   !query.trim() ||
+                  //   !!(
+                  //     userCredits &&
+                  //     userCredits.credits <= 0 &&
+                  //     !userCredits.isPremium
+                  //   )
+                  // }
                 >
                   {isLoading ? (
                     <SpinnerGapIcon className="animate-spin" />

@@ -89,16 +89,14 @@ export function Sideabar() {
   };
 
   return (
-    <Sidebar className={`border py-2 pl-2`}>
-      <SidebarContent className="h-full justify-between">
+    <Sidebar className={`bg-transparent py-2 pl-2 border-none`}>
+      <SidebarContent className="h-full justify-between bg-transparent">
         <SidebarGroup className="flex flex-col gap-8">
           <SidebarHeader className="sticky top-0 !p-0">
             <div className="flex w-full flex-col items-center gap-2 rounded-lg">
               <div className="flex w-full items-center gap-2 rounded-lg p-1 text-lg justify-between">
                 <SidebarTrigger className="shrink-0" />
-                <h1 className="text-2xl font-bold text-foreground">
-                  AurAI
-                </h1>
+                <h1 className="text-2xl font-bold text-foreground">AurAI</h1>
                 <span className="size-6"></span>
               </div>
               <Button
@@ -193,15 +191,15 @@ export function Sideabar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarFooter className="sticky bottom-0 flex flex-col gap-2 w-full p-3 bg-background">
+        <SidebarFooter className="sticky bottom-0 flex flex-col gap-2 w-full p-3 bg-transparent">
           {!isUserLoading && !user && (
             <Link href="/auth">
-              <Button variant="secondary" className="w-full" size="lg">
+              <Button variant="outline" className="w-full" size="lg">
                 Login
               </Button>
             </Link>
           )}
-          <Dialog open={isAppsDialogOpen} onOpenChange={setIsAppsDialogOpen}>
+          {/* <Dialog open={isAppsDialogOpen} onOpenChange={setIsAppsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="secondary" className="w-full" size="lg">
                 AI Apps
@@ -245,7 +243,7 @@ export function Sideabar() {
                 </DialogClose>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
 
           {user && (
             <Button
@@ -262,7 +260,7 @@ export function Sideabar() {
             </Button>
           )}
 
-          <div className="flex items-center gap-2 justify-center">
+          {/* <div className="flex items-center gap-2 justify-center">
             <Link href="/terms" target="_target" className="text-xs">
               Terms
             </Link>
@@ -272,7 +270,7 @@ export function Sideabar() {
             <Link href="/refund" target="_target" className="text-xs">
               Refund
             </Link>
-          </div>
+          </div> */}
         </SidebarFooter>
       </SidebarContent>
     </Sidebar>
