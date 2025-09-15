@@ -21,6 +21,7 @@ import SyntaxHighlighter from "react-syntax-highlighter";
 import remarkGfm from "remark-gfm";
 import { useTheme } from "next-themes";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { useConversationById } from "@/hooks/use-conversation";
 // import { Geist_Mono } from "next/font/google";
 // import { cn } from "@/lib/utils";
 // import TabsSuggestion from "./tabs-suggestion";
@@ -61,7 +62,7 @@ type Model = "openai/gpt-oss-20b:free" | "deepseek/deepseek-r1";
 const UIInput = ({
   conversationId: initialConversationId,
 }: UIInputProps = {}) => {
-  const [model, setModel] = useState<Model>("openai/gpt-oss-20b:free");
+  const [model, setModel] = useState<Model>("deepseek/deepseek-r1");
   const [query, setQuery] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -75,9 +76,9 @@ const UIInput = ({
   );
   const { resolvedTheme } = useTheme();
   // const { user, isLoading: isUserLoading } = useUser();
-  // const { conversation, loading: converstionLoading } = useConversationById(
-  //   initialConversationId
-  // );
+  const { conversation, loading: converstionLoading } = useConversationById(
+    initialConversationId
+  );
   // const {
   //   userCredits,
   //   isLoading: isCreditsLoading,
@@ -313,8 +314,7 @@ const UIInput = ({
     }
   };
 
-  // if (initialConversationId && converstionLoading) {
-  if (initialConversationId) {
+  if (initialConversationId && converstionLoading) {
     return (
       <div className="flex w-full overflow-hidden h-[96dvh]">
         <div className="relative flex h-full w-full flex-col">

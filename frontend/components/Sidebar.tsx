@@ -36,31 +36,29 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-// import { useExecutionContext } from "@/contexts/execution-context";
-// import { Execution } from "@/hooks/useExecution";
-type Execution = {
-  id: string;
-  title: string;
-};
+import { cn } from "@/lib/utils";
+import { useExecutionContext } from "@/contexts/execution-context";
+import { Execution } from "@/hooks/useExecution";
 
 export function Sideabar() {
   const [uiExecutions, setUiExecutions] = useState<Execution[]>([]);
   const [hoverChatId, setHoverChatId] = useState<string>("");
   const [isAppsDialogOpen, setIsAppsDialogOpen] = useState(false);
-  //   const { executions, loading, createNewExecution } = useExecutionContext();
-  const loading = false;
+  const { executions, loading, createNewExecution } = useExecutionContext();
   const router = useRouter();
 
-  //   useEffect(() => {
-  //     if (executions) {
-  //       setUiExecutions(executions);
-  //     }
-  //   }, [executions]);
+  useEffect(() => {
+    if (executions) {
+      setUiExecutions(executions);
+    }
+  }, [executions]);
 
   const handleDeleteExecution = (executionId: string) => {
     try {
       toast.success("Chat deleted successfully");
-      //   setUiExecutions(executions.filter((execution) => execution.id !== executionId));
+      setUiExecutions(
+        executions.filter((execution) => execution.id !== executionId)
+      );
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
@@ -96,14 +94,16 @@ export function Sideabar() {
             <div className="flex w-full flex-col items-center gap-2 rounded-lg">
               <div className="flex w-full items-center gap-2 rounded-lg p-1 text-lg justify-between">
                 <SidebarTrigger className="shrink-0" />
-                <h1 className="text-2xl font-bold text-foreground">AurAI</h1>
+                <h1 className={cn("text-2xl font-light text-foreground")}>
+                  AurAI
+                </h1>
                 <span className="size-6"></span>
               </div>
               <Button
                 onClick={(e) => {
                   e.preventDefault();
-                  //   const id = createNewExecution();
-                  //   router.push(`/ask/${id}`);
+                  const id = createNewExecution();
+                  router.push(`/ask/${id}`);
                 }}
                 variant="accent"
                 className="w-full"
@@ -192,13 +192,13 @@ export function Sideabar() {
         </SidebarGroup>
 
         <SidebarFooter className="sticky bottom-0 flex flex-col gap-2 w-full p-3 bg-transparent">
-          {!isUserLoading && !user && (
+          {/* {!isUserLoading && !user && (
             <Link href="/auth">
               <Button variant="outline" className="w-full" size="lg">
                 Login
               </Button>
             </Link>
-          )}
+          )} */}
           {/* <Dialog open={isAppsDialogOpen} onOpenChange={setIsAppsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="secondary" className="w-full" size="lg">
@@ -259,18 +259,6 @@ export function Sideabar() {
               Logout
             </Button>
           )}
-
-          {/* <div className="flex items-center gap-2 justify-center">
-            <Link href="/terms" target="_target" className="text-xs">
-              Terms
-            </Link>
-            <Link href="/privacy" target="_target" className="text-xs">
-              Privacy
-            </Link>
-            <Link href="/refund" target="_target" className="text-xs">
-              Refund
-            </Link>
-          </div> */}
         </SidebarFooter>
       </SidebarContent>
     </Sidebar>
