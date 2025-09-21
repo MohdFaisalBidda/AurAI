@@ -21,11 +21,12 @@ import SyntaxHighlighter from "react-syntax-highlighter";
 import remarkGfm from "remark-gfm";
 import { useTheme } from "next-themes";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { useConversationById } from "@/hooks/use-conversation";
+import { useConversationById } from "@/hooks/use-conversation-by-id";
+import TabsSuggestion from "./ui/tabs-suggestions";
+import { ModelSelector } from "./ui/model-selector";
+import { DEFAULT_MODEL_ID } from "@/models";
 // import { Geist_Mono } from "next/font/google";
 // import { cn } from "@/lib/utils";
-// import TabsSuggestion from "./tabs-suggestion";
-// import { ModelSelector } from "@/components/ui/model-selector";
 // import { DEFAULT_MODEL_ID } from "@/models/constants";
 // import { useTheme } from "next-themes";
 // import { ArrowUpIcon, WrapText } from "lucide-react";
@@ -57,12 +58,10 @@ interface UIInputProps {
   conversationId?: string;
 }
 
-type Model = "openai/gpt-oss-20b:free" | "deepseek/deepseek-r1";
-
 const UIInput = ({
   conversationId: initialConversationId,
 }: UIInputProps = {}) => {
-  const [model, setModel] = useState<Model>("deepseek/deepseek-r1");
+  const [model, setModel] = useState<string>(DEFAULT_MODEL_ID);
   const [query, setQuery] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -91,12 +90,12 @@ const UIInput = ({
     setIsWrapped((prev) => !prev);
   }, []);
 
-  // useEffect(() => {
-  //   if (conversation?.messages && initialConversationId) {
-  //     setMessages(conversation.messages);
-  //     setShowWelcome(false);
-  //   }
-  // }, [conversation, initialConversationId]);
+  useEffect(() => {
+    if (conversation?.messages && initialConversationId) {
+      setMessages(conversation.messages);
+      setShowWelcome(false);
+    }
+  }, [conversation, initialConversationId]);
 
   const processStream = async (response: Response, userMessage: string) => {
     if (!response.ok) {
@@ -287,6 +286,7 @@ const UIInput = ({
       console.log(response, "response");
 
       await processStream(response, currentQuery);
+      // await refreshConversations();
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Error sending message:", error);
@@ -341,10 +341,10 @@ const UIInput = ({
         {!query && showWelcome && messages.length === 0 ? (
           <div className="flex h-full w-full flex-col">
             <div className="flex h-full w-full flex-col items-center justify-center">
-              {/* <TabsSuggestion
+              <TabsSuggestion
                 suggestedInput={query}
                 setSuggestedInput={setQuery}
-              /> */}
+              />
             </div>
           </div>
         ) : (
@@ -566,7 +566,7 @@ const UIInput = ({
           <div className="mx-auto w-full max-w-4xl">
             <form
               onSubmit={handleCreateChat}
-              className="bg-accent/30 dark:bg-accent/10 flex w-full flex-col rounded-xl p-3"
+              className="bg-accent/30 dark:bg-accent/10 flex w-full flex-col rounded-xl p-3 drop-shadow-2xl"
             >
               <Textarea
                 autoFocus
@@ -598,18 +598,18 @@ const UIInput = ({
               />
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {/* <ModelSelector
+                  <ModelSelector
                     value={model}
                     onValueChange={setModel}
-                    disabled={
-                      isLoading ||
-                      !!(
-                        userCredits &&
-                        userCredits.credits <= 0 &&
-                        !userCredits.isPremium
-                      )
-                    }
-                  /> */}
+                    // disabled={
+                    //   isLoading ||
+                    //   !!(
+                    //     userCredits &&
+                    //     userCredits.credits <= 0 &&
+                    //     !userCredits.isPremium
+                    //   )
+                    // }
+                  />
                 </div>
                 <Button
                   type="submit"

@@ -6,6 +6,7 @@ import SidebarCollapsedOptions from "@/components/SidebarCollapsedOptions";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Sideabar } from "@/components/Sidebar";
 import { ExecutionProvider } from "@/contexts/execution-context";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistDM = DM_Sans({
   variable: "--font-dm-sans",
@@ -25,10 +26,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <body
-        className={`${geistDM.variable} antialiased min-h-screen bg-[#213E33] text-foreground`}
+        className={`${geistDM.variable} antialiased min-h-screen bg-gradient-to-tl from-[#1E293B] to-[#111827] text-foreground`}
       >
+        <Toaster position="top-center" />
         <ExecutionProvider>
           <SidebarProvider>
             <ThemeProvider
@@ -38,8 +40,8 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <Sideabar />
-              <SidebarInset className="!h-svh p-2">
-                <div className="bg-[#060D0C] relative h-full max-h-svh w-full rounded-xl p-4 pt-0">
+              <SidebarInset className="!h-svh md:p-2">
+                <div className="bg-[#060D0C] relative h-full max-h-svh w-full md:rounded-xl p-4 pt-0">
                   <div className="absolute top-0 left-0 z-[50] flex h-12 w-full items-center justify-between px-3">
                     <SidebarCollapsedOptions />
                     <div className="flex items-center gap-2">

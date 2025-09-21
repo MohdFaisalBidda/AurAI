@@ -7,7 +7,7 @@ import { useExecution, Execution } from '@/hooks/useExecution';
 interface ExecutionContextType {
   executions: Execution[];
   loading: boolean;
-  createNewExecution: (title?: string) => string;
+  createNewExecution: (title?: string) => Promise<string>;
   refreshExecutions: () => void;
 }
 

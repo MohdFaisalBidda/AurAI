@@ -18,6 +18,8 @@ import {
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Conversation, useConversations } from "@/hooks/use-conversations";
+import { useRouter } from "next/navigation";
 interface Chat {
   id: string;
   updatedAt: Date;
@@ -27,9 +29,14 @@ interface Chat {
   }[];
 }
 
-const SidebarCollapsedOptions = () => { 
+const SidebarCollapsedOptions = () => {
   const { open } = useSidebar();
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [isAppsDialogOpen, setIsAppsDialogOpen] = useState(false);
+  const { createNewConversation, conversations, refreshConversations } =
+    useConversations();
+  console.log(conversations, "conversations in sidebar");
+
+  const router = useRouter();
 
   return (
     <div
@@ -39,11 +46,16 @@ const SidebarCollapsedOptions = () => {
     >
       <SidebarTrigger className={open ? "lg:invisible" : "lg:flex"} />
 
-      <Dialog>
-        <DialogTrigger className="hover:bg-muted flex size-7 items-center justify-center rounded-lg">
+      <Dialog open={isAppsDialogOpen} onOpenChange={setIsAppsDialogOpen}>
+        <DialogTrigger
+          className={cn(
+            "hover:bg-muted flex size-7 items-center justify-center rounded-lg",
+            open ? "invisible" : "flex"
+          )}
+        >
           <MagnifyingGlassIcon
             weight="bold"
-            className={cn(open ? "invisible" : "flex", "size-4")}
+            className={cn(open ? "invisible" : "flex cursor-pointer", "size-4")}
           />
         </DialogTrigger>
         <DialogContent className="border-none p-0">
@@ -53,9 +65,16 @@ const SidebarCollapsedOptions = () => {
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup className="no-scrollbar" heading="Recent Chats">
-                {chats?.map((chat: Chat) => (
+                {conversations?.map((chat: Conversation) => (
                   <CommandItem key={chat.id}>
-                    <span>{chat.messages[0]?.content}...</span>
+                    <span
+                      onClick={() => {
+                        router.push(`/ask/${chat.id}`);
+                        setIsAppsDialogOpen(false);
+                      }}
+                    >
+                      {chat.messages?.[0]?.content}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -63,14 +82,22 @@ const SidebarCollapsedOptions = () => {
           </Command>
         </DialogContent>
       </Dialog>
-      <Link
-        href={"/ask"}
-        className="hover:bg-muted flex size-7 items-center justify-center rounded-lg"
+      <button
+        onClick={async (e) => {
+          e.preventDefault();
+          const id = await createNewConversation();
+          router.push(`/ask/${id}`);
+          await refreshConversations();
+        }}
+        className={cn(
+          "hover:bg-muted cursor-pointer flex size-7 items-center justify-center rounded-lg",
+          open ? "invisible" : "flex"
+        )}
       >
         <PlusIcon weight="bold" className={open ? "invisible" : "flex"} />
-      </Link>
+      </button>
     </div>
   );
 };
 
-export default SidebarCollapsedOptions
+export default SidebarCollapsedOptions;

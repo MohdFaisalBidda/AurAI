@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CreateChatType, Role } from "../types/type";
+import { CreateChatType, CreateConversationType, Role } from "../types/type";
 import { InMemoryStore } from "../lib/InMemoryStore";
 import { createCompletion } from "../lib/opnerouter";
 import { authMiddleware } from "../middleware/auth-middleware";
@@ -12,6 +12,13 @@ router.get("/conversations", authMiddleware, async (req, res) => {
     const conversations = await prisma.conversation.findMany({
         where: {
             userId
+        },
+        include: {
+            messages: {
+                select: {
+                    content: true,
+                }
+            }
         }
     })
 
@@ -37,6 +44,62 @@ router.get("/conversations/:conversationId", authMiddleware, async (req, res) =>
     console.log(conversation, "conversation in get conversation");
 
     res.json({ conversation })
+})
+
+router.post("/conversation/create", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId
+        const { success, data, error } = CreateConversationType.safeParse(req.body);
+
+        if (!success) {
+            res.status(411).json({
+                message: "Incorrect Inputs",
+                errors: error.flatten().fieldErrors
+            })
+            return
+        }
+
+        const response = await prisma.conversation.create({
+            data: {
+                id: data.id,
+                title: data.title,
+                userId
+            }
+        })
+
+        res.json(response)
+
+    } catch (error) {
+        console.error("Error creating conversation:", error);
+        res.status(500).json({ error: "Error Creating Conversation", details: String(error) });
+    }
+})
+
+router.delete("/conversation/:conversationId", authMiddleware, async (req, res) => {
+    try {
+        const userId = req.userId
+        const conversationId = req.params.conversationId
+
+        const messagesDeleted = await prisma.message.deleteMany({
+            where: {
+                conversationId: conversationId,
+            }
+        })
+        console.log(messagesDeleted, "messages deleted");
+
+
+        const response = await prisma.conversation.delete({
+            where: {
+                id: conversationId,
+                userId
+            }
+        })
+
+        res.json(response)
+    } catch (error) {
+        console.error("Error deleting conversation:", error);
+        res.status(500).json({ error: "Error Deleting Conversation", details: String(error) });
+    }
 })
 
 router.post("/chat", authMiddleware, async (req, res) => {

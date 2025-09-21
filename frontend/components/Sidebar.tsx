@@ -30,7 +30,7 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 // import { Logo } from "../svgs/logo";
 // import { useUser } from "@/hooks/useUser";
 import Link from "next/link";
@@ -39,26 +39,66 @@ import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
 import { useExecutionContext } from "@/contexts/execution-context";
 import { Execution } from "@/hooks/useExecution";
+import { Conversation, useConversations } from "@/hooks/use-conversations";
 
 export function Sideabar() {
-  const [uiExecutions, setUiExecutions] = useState<Execution[]>([]);
+  const [allConversations, setAllConversations] = useState<Conversation[]>([]);
   const [hoverChatId, setHoverChatId] = useState<string>("");
   const [isAppsDialogOpen, setIsAppsDialogOpen] = useState(false);
-  const { executions, loading, createNewExecution } = useExecutionContext();
+  const {
+    conversations,
+    createNewConversation,
+    refreshConversations,
+    deleteConversation,
+    loading,
+  } = useConversations();
   const router = useRouter();
+  const params = useParams();
+  const currentConversationId = params.id as string;
 
   useEffect(() => {
-    if (executions) {
-      setUiExecutions(executions);
+    if (conversations) {
+      setAllConversations(conversations);
     }
-  }, [executions]);
+  }, [conversations]);
 
-  const handleDeleteExecution = (executionId: string) => {
+  const handleDeleteConversation = async (conversationId: string) => {
     try {
-      toast.success("Chat deleted successfully");
-      setUiExecutions(
-        executions.filter((execution) => execution.id !== executionId)
+      const currentIndex = conversations.findIndex(
+        (conv) => conv.id === conversationId
       );
+      await deleteConversation(conversationId);
+      await refreshConversations();
+      toast.success("Chat deleted successfully");
+      // Filter out the deleted conversation
+      const updatedConversations = allConversations.filter(
+        (conv) => conv.id !== conversationId
+      );
+      setAllConversations(updatedConversations);
+
+      // Handle routing after deletion
+      if (updatedConversations.length > 0) {
+        // If there are remaining conversations, navigate to the next one
+        if (currentIndex < updatedConversations.length) {
+          // Navigate to the conversation at the same index (or the last one if index is out of bounds)
+          const nextIndex = Math.min(
+            currentIndex,
+            updatedConversations.length - 1
+          );
+          router.push(`/ask/${updatedConversations[nextIndex].id}`);
+        } else {
+          // If we deleted the last item, navigate to the new last item
+          router.push(
+            `/ask/${updatedConversations[updatedConversations.length - 1].id}`
+          );
+        }
+      } 
+      // else {
+      //   // If no conversations left, create a new one and navigate to it
+      //   const id = await createNewConversation();
+      //   router.push(`/ask/${id}`);
+      //   await refreshConversations();
+      // }
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
@@ -100,10 +140,11 @@ export function Sideabar() {
                 <span className="size-6"></span>
               </div>
               <Button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  const id = createNewExecution();
+                  const id = await createNewConversation();
                   router.push(`/ask/${id}`);
+                  await refreshConversations();
                 }}
                 variant="accent"
                 className="w-full"
@@ -112,7 +153,7 @@ export function Sideabar() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 pb-2 border-b">
+            <div className="flex items-center gap-2 md:py-2 border-b p-3 md:p-0 py-3">
               <MagnifyingGlassIcon className="text-foreground" weight="bold" />
               <Input
                 placeholder="Search for chats"
@@ -123,63 +164,62 @@ export function Sideabar() {
           <SidebarGroupContent>
             <SidebarMenu className="w-full p-0">
               {loading
-                ? // Skeleton loader while loading saved chats
-                  Array.from({ length: 4 }).map((_, i) => (
+                ? Array.from({ length: 4 }).map((_, i) => (
                     <div
                       key={i}
                       className="bg-primary/15 mb-2 h-7 w-full animate-pulse rounded-md"
                     />
                   ))
-                : uiExecutions.map((execution: Execution) => (
-                    <SidebarMenuItem key={execution.id}>
+                : conversations.map((coversation: Conversation) => (
+                    <SidebarMenuItem key={coversation.id}>
                       <SidebarMenuButton
                         className="group hover:bg-primary/20 relative"
-                        onMouseEnter={() => setHoverChatId(execution.id)}
+                        onMouseEnter={() => setHoverChatId(coversation.id)}
                         onMouseLeave={() => setHoverChatId("")}
-                        onClick={() => router.push(`/ask/${execution.id}`)}
+                        onClick={() => router.push(`/ask/${coversation.id}`)}
                       >
                         <div className="flex w-full items-center justify-between">
                           <span className="z-[-1] cursor-pointer truncate">
-                            {execution.title}
+                            {coversation.title}
                           </span>
                           <div
                             className={`absolute top-0 right-0 z-[5] h-full w-12 rounded-r-md blur-[2em] ${
-                              execution.id === hoverChatId ? "bg-primary" : ""
+                              coversation.id === hoverChatId ? "bg-primary" : ""
                             }`}
                           />
                           <div
                             className={`absolute top-1/2 -right-16 z-[10] flex h-full -translate-y-1/2 items-center justify-center gap-1.5 rounded-r-md bg-transparent px-1 backdrop-blur-xl transition-all duration-200 ease-in-out ${
-                              execution.id === hoverChatId
+                              coversation.id === hoverChatId
                                 ? "group-hover:right-0"
                                 : ""
                             }`}
                           >
                             <div
-                              className="flex items-center justify-center rounded-md"
+                              className="flex items-center justify-center rounded-md cursor-pointer"
                               onClick={(e) => {
                                 e.preventDefault();
                                 const shareLink =
                                   process.env.NEXT_PUBLIC_APP_URL +
-                                  `/chat/share/${execution.id}`;
+                                  `/ask/${coversation.id}`;
                                 navigator.clipboard.writeText(shareLink);
                                 toast.success("Share link copied to clipboard");
                               }}
                             >
                               <ShareFatIcon
                                 weight="fill"
-                                className="hover:text-foreground size-4"
+                                className="hover:text-foreground hover:fill-black size-4"
                               />
                             </div>
 
                             <div
-                              className="flex items-center justify-center rounded-md"
+                              className="flex items-center justify-center rounded-md cursor-pointer"
                               onClick={() =>
-                                handleDeleteExecution(execution.id)
+                                handleDeleteConversation(coversation.id)
                               }
                             >
                               <TrashIcon
                                 weight={"bold"}
-                                className="hover:text-foreground size-4"
+                                className="hover:text-foreground hover:fill-red-500 size-4"
                               />
                             </div>
                           </div>
