@@ -1,3 +1,4 @@
+import { BACKEND_URL } from "@/constants";
 import { useEffect, useState } from "react";
 
 
@@ -13,8 +14,6 @@ enum ExecutionType {
     CONVERSATION = "CONVERSATION",
     ARTICLE_SUMMARIZER = "ARTICLE_SUMMARIZER"
 }
-
-const BACKEND_URL = "http://localhost:3001";
 
 export function useExecution() {
     const [executions, setExecutions] = useState<Execution[]>([]);

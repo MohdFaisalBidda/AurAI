@@ -25,15 +25,8 @@ import { useConversationById } from "@/hooks/use-conversation-by-id";
 import TabsSuggestion from "./ui/tabs-suggestions";
 import { ModelSelector } from "./ui/model-selector";
 import { DEFAULT_MODEL_ID } from "@/models";
-// import { Geist_Mono } from "next/font/google";
-// import { cn } from "@/lib/utils";
-// import { DEFAULT_MODEL_ID } from "@/models/constants";
-// import { useTheme } from "next-themes";
-// import { ArrowUpIcon, WrapText } from "lucide-react";
-// import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-// import { useUser } from "@/hooks/useUser";
-// import { useRouter } from "next/navigation";
-// import { useConversationById } from "@/hooks/useConversation";
+import { BACKEND_URL } from "@/constants";
+import { useUser } from "@/hooks/useUser";
 // import { useCredits } from "@/hooks/useCredits";
 // import { UpgradeCTA } from "@/components/ui/upgrade-cta";
 // import { useExecutionContext } from "@/contexts/execution-context";
@@ -50,9 +43,6 @@ interface Message {
   role: "user" | "assistant";
   content: string;
 }
-
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 
 interface UIInputProps {
   conversationId?: string;
@@ -71,10 +61,10 @@ const UIInput = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isWrapped, setIsWrapped] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>(
-    undefined
+    initialConversationId
   );
   const { resolvedTheme } = useTheme();
-  // const { user, isLoading: isUserLoading } = useUser();
+  const { user, loading: isUserLoading } = useUser();
   const { conversation, loading: converstionLoading } = useConversationById(
     initialConversationId
   );
@@ -91,11 +81,17 @@ const UIInput = ({
   }, []);
 
   useEffect(() => {
-    if (conversation?.messages && initialConversationId) {
+    if (conversation?.messages && conversationId === initialConversationId) {
       setMessages(conversation.messages);
       setShowWelcome(false);
     }
-  }, [conversation, initialConversationId]);
+  }, [conversation, conversationId, initialConversationId]);
+
+  useEffect(() => {
+    if (initialConversationId && initialConversationId !== conversationId) {
+      setConversationId(initialConversationId);
+    }
+  }, [initialConversationId, conversationId]);
 
   const processStream = async (response: Response, userMessage: string) => {
     if (!response.ok) {
@@ -105,6 +101,7 @@ const UIInput = ({
     }
 
     const tempMessageId = `ai-${Date.now()}`;
+    let receivedConversationId = conversationId;
 
     try {
       const reader = response.body?.getReader();
@@ -159,6 +156,15 @@ const UIInput = ({
               const parsedData = JSON.parse(data);
               console.log("Parsed data:", parsedData);
 
+              if (parsedData.conversationId && !receivedConversationId) {
+                receivedConversationId = parsedData.conversationId;
+                setConversationId(parsedData.conversationId);
+                // Only navigate if this was a new conversation
+                if (!initialConversationId) {
+                  router.push(`/ask/${parsedData.conversationId}`);
+                }
+              }
+
               // Extract content based on different possible response formats
               const content =
                 parsedData.content ||
@@ -185,6 +191,15 @@ const UIInput = ({
             try {
               const parsedData = JSON.parse(line);
               console.log("Direct JSON parsed:", parsedData);
+
+              if (parsedData.conversationId && !receivedConversationId) {
+                receivedConversationId = parsedData.conversationId;
+                setConversationId(parsedData.conversationId);
+                // Only navigate if this was a new conversation
+                if (!initialConversationId) {
+                  router.push(`/ask/${parsedData.conversationId}`);
+                }
+              }
 
               const content =
                 parsedData.content ||
@@ -235,10 +250,10 @@ const UIInput = ({
   const handleCreateChat = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // if (!user) {
-    //   router.push("/auth");
-    //   return;
-    // }
+    if (!user) {
+      router.push("/auth");
+      return;
+    }
 
     // Check if user has credits
     // if (userCredits && userCredits.credits <= 0 && !userCredits.isPremium) {
@@ -284,9 +299,23 @@ const UIInput = ({
       });
 
       console.log(response, "response");
+      console.log(response.headers, "response headers");
+
+      // if (!conversationId && response.ok) {
+      //   // Extract conversationId from response if needed, or rely on backend to return it
+      //   // This depends on your backend API response format
+      //   const responseData = await response.clone().json(); // Clone to read without consuming stream
+      //   if (responseData.conversationId) {
+      //     setConversationId(responseData.conversationId);
+
+      //     // Also update the URL if this was a new conversation
+      //     if (!initialConversationId) {
+      //       router.push(`/ask/${responseData.conversationId}`);
+      //     }
+      //   }
+      // }
 
       await processStream(response, currentQuery);
-      // await refreshConversations();
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Error sending message:", error);

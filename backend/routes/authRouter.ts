@@ -5,11 +5,29 @@ import jwt from "jsonwebtoken"
 import { TOTP } from "totp-generator"
 import base32 from "hi-base32"
 import { prisma } from "../utils/prismaClient";
+import { authMiddleware } from "../middleware/auth-middleware";
+import sendOtpTemplate from "../email/signin";
+import { perMinuteLimiter, perMinuteLimiterRelaxed } from "../middleware/email-rate-limiter";
 
 const router = Router()
+const otpCache = new Map<string, string>();
+
+router.get("/get_user", authMiddleware, async (req, res) => {
+    const userId = req.userId
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId
+        }
+    })
+
+    res.json({
+        user
+    })
+
+})
 
 //Rate limit here
-router.post("/initialize_sigin", async (req, res) => {
+router.post("/initialize_sigin",perMinuteLimiter, async (req, res) => {
     try {
         const { success, data } = CreateUserType.safeParse(req.body)
 
@@ -26,7 +44,6 @@ router.post("/initialize_sigin", async (req, res) => {
         // } else {
         //     console.log("Log in to AurAI", otp);
         // }
-        await sendEmail(data.email, "Welcome to AurAI", otp)
 
         const user = await prisma.user.findUnique({
             where: {
@@ -42,11 +59,14 @@ router.post("/initialize_sigin", async (req, res) => {
             return
         }
 
+        otpCache.set(data.email, otp);
         await prisma.user.create({
             data: {
                 email: data.email,
             }
         })
+
+        await sendEmail(data.email, "Welcome to AurAI", sendOtpTemplate({ otp }))
         res.status(200).json({
             message: "Email sent successfully",
             success: true,
@@ -61,7 +81,7 @@ router.post("/initialize_sigin", async (req, res) => {
     }
 });
 
-router.post("/sigin", async (req, res) => {
+router.post("/signin",perMinuteLimiterRelaxed, async (req, res) => {
     const { success, data } = SigIn.safeParse(req.body)
 
     if (!success) {
@@ -71,11 +91,10 @@ router.post("/sigin", async (req, res) => {
         return
     }
 
-    //Verify OTP
-    const { otp } = TOTP.generate(base32.encode(data.email + process.env.JWT_SECRET!))
+    console.log("otpCache is", otpCache.get(data.email),data.otp);
 
-    if (otp !== data.otp) {
-        console.log(otp, data.otp);
+    if (otpCache.get(data.email) !== data.otp) {
+        console.log("invalid otp");
 
         res.status(411).json({
             message: "Incorrect OTP",

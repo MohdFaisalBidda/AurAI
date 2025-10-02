@@ -116,10 +116,35 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .shiny-overlay-light {
+    @apply absolute inset-0 overflow-hidden;
+  }
+
+  .shiny-overlay-light::after {
+    content: '';
+    transform: skewX(-45deg);
+    @apply absolute top-0 left-0 w-full h-full;
+    background: radial-gradient(circle at center, hsla(0, 0%, 100%, .5), hsla(0, 0%, 100%, 0) 70%);
+    animation: shine 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes shine {
+    0% {
+      transform: translateX(-100%) skewX(-45deg);
+    }
+
+    100% {
+      transform: translateX(300%) skewX(-45deg);
+    }
+  }
 
 
 .no-scrollbar {

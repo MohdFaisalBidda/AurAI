@@ -157,7 +157,7 @@ router.post("/chat", authMiddleware, async (req, res) => {
         }], data.model, (chunk: string) => {
             console.log("inside createCompletion");
             message += chunk
-            res.write(chunk)
+            res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
         })
 
         InMemoryStore.getInstance().add(conversationId, {
@@ -199,6 +199,11 @@ router.post("/chat", authMiddleware, async (req, res) => {
             ]
         })
 
+        res.write(`data: ${JSON.stringify({
+            content: "",
+            conversationId: !data.conversationId ? conversationId : undefined,
+            done: true
+        })}\n\n`);
         res.end();
     }
     catch (err) {

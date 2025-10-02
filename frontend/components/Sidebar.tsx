@@ -32,13 +32,11 @@ import {
 import { toast } from "sonner";
 import { useParams, useRouter } from "next/navigation";
 // import { Logo } from "../svgs/logo";
-// import { useUser } from "@/hooks/useUser";
+import { useUser } from "@/hooks/useUser";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
-import { useExecutionContext } from "@/contexts/execution-context";
-import { Execution } from "@/hooks/useExecution";
 import { Conversation, useConversations } from "@/hooks/use-conversations";
 
 export function Sideabar() {
@@ -92,7 +90,9 @@ export function Sideabar() {
             `/ask/${updatedConversations[updatedConversations.length - 1].id}`
           );
         }
-      } 
+      } else {
+        router.push(`/ask`);
+      }
       // else {
       //   // If no conversations left, create a new one and navigate to it
       //   const id = await createNewConversation();
@@ -104,22 +104,18 @@ export function Sideabar() {
     }
   };
 
-  //   const { user, isLoading: isUserLoading } = useUser();
-  const user = false;
-  const isUserLoading = false;
-  const isLoding = false;
-
+  const { user, loading: isUserLoading } = useUser();
   // Available AI Apps
-  const availableApps = [
-    {
-      id: "article-summarizer",
-      name: "Article Summarizer",
-      description:
-        "Summarize long articles into concise, easy-to-read summaries",
-      icon: "📄",
-      credits: 2,
-    },
-  ];
+  // const availableApps = [
+  //   {
+  //     id: "article-summarizer",
+  //     name: "Article Summarizer",
+  //     description:
+  //       "Summarize long articles into concise, easy-to-read summaries",
+  //     icon: "📄",
+  //     credits: 2,
+  //   },
+  // ];
 
   const handleAppNavigation = (appId: string) => {
     router.push(`/apps/${appId}/`);
@@ -142,9 +138,8 @@ export function Sideabar() {
               <Button
                 onClick={async (e) => {
                   e.preventDefault();
-                  const id = await createNewConversation();
-                  router.push(`/ask/${id}`);
-                  await refreshConversations();
+                  const conversation = await createNewConversation();
+                  router.push(`/ask/${conversation.id}`);
                 }}
                 variant="accent"
                 className="w-full"
@@ -232,13 +227,14 @@ export function Sideabar() {
         </SidebarGroup>
 
         <SidebarFooter className="sticky bottom-0 flex flex-col gap-2 w-full p-3 bg-transparent">
-          {/* {!isUserLoading && !user && (
+          {!isUserLoading && !user && (
             <Link href="/auth">
-              <Button variant="outline" className="w-full" size="lg">
+              <Button variant="outline" className="relative w-full" size="lg">
+                <span className="shiny-overlay-light rounded-lg" />
                 Login
               </Button>
             </Link>
-          )} */}
+          )}
           {/* <Dialog open={isAppsDialogOpen} onOpenChange={setIsAppsDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="secondary" className="w-full" size="lg">
@@ -287,7 +283,7 @@ export function Sideabar() {
 
           {user && (
             <Button
-              variant="destructive"
+              variant="outline"
               className="w-full"
               size="lg"
               onClick={(e) => {

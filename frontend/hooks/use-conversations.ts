@@ -1,6 +1,5 @@
+import { BACKEND_URL } from "@/constants";
 import { useEffect, useState } from "react";
-
-const BACKEND_URL = "http://localhost:3001";
 
 enum Role {
   USER = "user",
@@ -52,9 +51,9 @@ export function useConversations() {
     const data = await response.json();
 
     setConversations((prev) => [data, ...(Array.isArray(prev) ? prev : [])]);
-    console.log(id, "new conversation id");
+    console.log(data.id, "new conversation id");
 
-    return id;
+    return data;
   }
 
   const deleteConversation = async (conversationId: string) => {

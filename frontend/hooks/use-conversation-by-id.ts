@@ -1,6 +1,5 @@
+import { BACKEND_URL } from "@/constants";
 import { useEffect, useState } from "react";
-
-const BACKEND_URL = "http://localhost:3001";
 
 enum Role  {
   USER = "user",
