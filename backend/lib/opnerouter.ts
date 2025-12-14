@@ -1,5 +1,5 @@
 import { resolve } from "bun";
-import type { Message, MODEL, Model, SUPPORTED_MODELS } from "../types/type";
+import type { Message, MODEL, SUPPORTED_MODELS } from "../types/type";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const MAX_TOKEN_ITERATIONS = 1000;
