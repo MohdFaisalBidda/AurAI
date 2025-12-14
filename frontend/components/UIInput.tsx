@@ -118,7 +118,7 @@ const UIInput = ({
       ]);
 
       let accumulatedContent = "";
-      let decoder = new TextDecoder();
+      const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
