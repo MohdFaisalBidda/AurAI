@@ -8,6 +8,10 @@ const app = express();
 app.use(express.json());
 app.use(cors())
 
+app.get("/", (_, res) => {
+    res.status(200).json({ message: "Welcome to AurAI" });
+})
+
 app.get("/ping", (_, res) => {
     res.status(200).json({ status: "healthy", uptime: process.uptime() });
 });
@@ -16,6 +20,6 @@ app.use("/ai", aiRouter);
 app.use("/execution", executionRouter);
 app.use("/auth", authRouter);
 
-app.listen(3001, () => {
-    console.log("Server started on port 3001")
+app.listen(process.env.PORT || 3001, () => {
+    console.log("Server started 🚀")
 })
