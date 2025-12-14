@@ -95,6 +95,9 @@ export function useConversations() {
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            return;
+          }
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 

@@ -25,7 +25,7 @@ export function Otp({ email }: { email: string }) {
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         toast("New verification code sent to your email");
       } else {
@@ -42,7 +42,7 @@ export function Otp({ email }: { email: string }) {
     const currentOtp = otpValue || otp;
     console.log("handleLogin called with:", { currentOtp, isSubmitting, length: currentOtp.length });
     if (currentOtp.length !== 6 || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`${BACKEND_URL}/auth/signin`, {
@@ -55,8 +55,11 @@ export function Otp({ email }: { email: string }) {
 
       const data = await response.json();
 
-      if (response.status === 401) {
-        toast(data.message);
+      if (!response.ok) {
+        if (response.status === 401) {
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       if (response.status === 429) {

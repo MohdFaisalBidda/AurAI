@@ -613,7 +613,7 @@ const UIInput = ({
                   // !userCredits.isPremium
                   //   ? "You need credits to start a chat. Please upgrade to continue."
                   //   :
-                  "Ask anything"
+                  "Ask your question"
                 }
                 className="h-[2rem] resize-none rounded-none border-none bg-transparent px-0 py-1 shadow-none ring-0 focus-visible:ring-0 dark:bg-transparent"
                 // disabled={

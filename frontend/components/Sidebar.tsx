@@ -283,7 +283,7 @@ export function Sideabar() {
 
           {user && (
             <Button
-              variant="outline"
+              variant="default"
               className="w-full"
               size="lg"
               onClick={(e) => {

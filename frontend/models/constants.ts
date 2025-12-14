@@ -29,7 +29,7 @@ export const MODELS: Model[] = [
       ModelCapability.FUNCTION_CALLING,
     ],
     isAvailable: true,
-    isPremium: false
+    isPremium: true
   },
   {
     id: "agentica-org/deepcoder-14b-preview:free",
@@ -93,6 +93,17 @@ export const MODELS: Model[] = [
     provider: ModelProvider.OPENROUTER,
     description: "Large-scale Chinese-English capable instruct model",
     maxTokens: 8192,
+    pricePer1kTokens: 0,
+    capabilities: [ModelCapability.TEXT, ModelCapability.CODE],
+    isAvailable: true,
+    isPremium: false
+  },
+  {
+    id: "qwen/qwen3-coder:free",
+    name: "Qwen: Qwen3 Coder 480B A35B (free)",
+    provider: ModelProvider.OPENROUTER,
+    description: "Qwen3-Coder-480B-A35B-Instruct is a Mixture-of-Experts (MoE) code generation model developed by the Qwen team.",
+    maxTokens: 12288,
     pricePer1kTokens: 0,
     capabilities: [ModelCapability.TEXT, ModelCapability.CODE],
     isAvailable: true,
@@ -265,7 +276,7 @@ export const MODELS: Model[] = [
   },
 ];
 
-export const DEFAULT_MODEL_ID = "google/gemini-2.5-flash";
+export const DEFAULT_MODEL_ID = "openai/gpt-oss-20b:free";
 
 export const getModelById = (id: string): Model | undefined => {
   return MODELS.find((model) => model.id === id);

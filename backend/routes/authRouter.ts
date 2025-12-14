@@ -52,9 +52,11 @@ router.post("/initialize_sigin",perMinuteLimiter, async (req, res) => {
         })
 
         if (user) {
-            res.status(400).json({
-                message: "User already exists",
-                success: false,
+            otpCache.set(data.email, otp);
+            await sendEmail(data.email, "Welcome back to AurAI", sendOtpTemplate({ otp }))
+            res.status(200).json({
+                message: "Email sent successfully",
+                success: true,
             })
             return
         }

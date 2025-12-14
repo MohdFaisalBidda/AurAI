@@ -18,7 +18,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         req.userId = (data as JwtPayload).userId
         next()
     } catch (error) {
-        res.status(411).json({
+        res.status(401).json({
             message: "Unauthorized",
             success: false
         })
