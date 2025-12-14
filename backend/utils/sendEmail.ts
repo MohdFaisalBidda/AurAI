@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 export async function sendEmail(to: string, subject: string, body: string) {
     let transporter = nodemailer.createTransport({
         host: "smtp-relay.brevo.com",
-        port: 587,
+        port: process.env.SMTP_PORT,
         secure: false,
         auth: {
             user: process.env.BREVO_SMTP_USER,
